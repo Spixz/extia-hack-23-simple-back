@@ -11,7 +11,7 @@ mongoose.connect(mongo_url, { useNewUrlParser: true, useUnifiedTopology: true })
     console.log('Connexion à MongoDB réussie');
   })
   .catch((error) => {
-    console.error('Erreur de connexion à MongoDB :', error);
+    console.errhttps://discord.com/channels/@me/1119368357368561796or('Erreur de connexion à MongoDB :', error);
   });
 
 const extiensSchema = new mongoose.Schema({
@@ -111,6 +111,6 @@ app.get('/', (req, res) => {
 
 
 // Démarrage du serveur
-app.listen(3000, () => {
+app.listen(process.env.PORT || 3000, () => {
   console.log('Serveur démarré sur le port 3000');
 });
