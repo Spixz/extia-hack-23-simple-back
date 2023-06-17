@@ -11,7 +11,7 @@ mongoose.connect(mongo_url, { useNewUrlParser: true, useUnifiedTopology: true })
     console.log('Connexion à MongoDB réussie');
   })
   .catch((error) => {
-    console.errhttps://discord.com/channels/@me/1119368357368561796or('Erreur de connexion à MongoDB :', error);
+    console.error('Erreur de connexion à MongoDB :', error);
   });
 
 const extiensSchema = new mongoose.Schema({
