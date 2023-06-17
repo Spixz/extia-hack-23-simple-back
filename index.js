@@ -84,7 +84,7 @@ app.post('/fresher', async (req, res) => {
       await Extien.create(new Extien(extienBackup));
 
       console.log(`${newFresher.name} meat ${extienBackup.name}`);
-    //   sendExtienEmail()
+      sendExtienEmail(newFresher, extienBackup)
 
       res.status(201).json(newFresher);
     } catch (error) {
@@ -93,14 +93,20 @@ app.post('/fresher', async (req, res) => {
     }
   });
 
+  function formatDate(date) {
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('fr-FR', options);
+  }
+
 function sendExtienEmail(fresher, extien) {
-    
     const mailOptions = {
-        from: 'extia.buddy@gmail.com',
-        to: extien.email,
-        subject: `Un nouvel extien à besoin de toi !`,
-        text: 'content email' //html
+        subject: `Un nouvel extien à besoin de toi de ton aide !`,
+        html: `<p>Salut ${extien.name},</p><p>${fresher.name} arrive bientôt (${formatDate(fresher.date)}) à Extia ${fresher.destination} !
+        </p><p>Tu peux le contacter à l'adresse suivante : ${fresher.email}</p><br>
+        Merci pour ton aide :)`
       };
+
+    sendEmail(mailOptions); 
 
 }
 

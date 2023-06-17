@@ -1,23 +1,23 @@
-const nodemailer = require('nodemailer');
-const MAIL_KEY = process.env.MAIL_KEY
-
-// Création du transporteur Nodemailer
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'extia.buddy@gmail.com',
-    pass: MAIL_KEY
-  }
-});
+const sgMail = require('@sendgrid/mail')
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 function sendEmail(mailOptions) {
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error('Erreur lors de l\'envoi de l\'e-mail :', error);
-        } else {
-          console.log('E-mail envoyé avec succès. ID du message :', info.messageId);
-        }
-      });
+    const msg = {
+        to: 'mammar.cyril@epitech.eu',
+        from: 'extia-buddy@fsocietyy.org',
+        subject: mailOptions.subject,
+        html: mailOptions.html,
+      }
+      
+      sgMail
+        .send(msg)
+        .then((response) => {
+          console.log(response[0].statusCode)
+          console.log(response[0].headers)
+        })
+        .catch((error) => {
+          console.error(error)
+        })
 }
 
 module.exports = sendEmail;
