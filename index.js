@@ -3,11 +3,14 @@ const mongoose = require("mongoose");
 const util = require("util");
 const sendEmail = require("./send_email");
 const cors = require("cors");
+const calcMatch = require("./matching");
+var buddy_resp = require("./buddyAnswer3v2");
+var fresher_resp = require("./fresher2v2");
 
 const MONGO_KEY = process.env.MONGO_KEY;
 const mongo_url = `mongodb+srv://spud:${MONGO_KEY}@cluster0.xb6iw9v.mongodb.net/?retryWrites=true&w=majority`;
-const BUDDIE_FORM_ID = "oSHgmEFS";
-const FRESHER_FORM_ID = "TO_CHANGE";
+const BUDDIE_FORM_ID = "JdVugwSh";
+const FRESHER_FORM_ID = "RgIDfA1x";
 
 mongoose
   .connect(mongo_url, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -22,22 +25,26 @@ const extiensSchema = new mongoose.Schema({
   name: String,
   email: String,
   socialBehavior: String,
+  supportLGBT: Boolean,
+  disability: [String],
+  gender: String,
   languages: [String],
-  contact: [String],
+  contact: String,
+  city: String,
 });
 
 const fresherSchema = new mongoose.Schema({
   name: String,
-  contactPreference: [String],
-  isDisable: String,
-  disabilityName: String,
-  socialBehavior: String,
-  languages: [String],
-  date: Date,
-  destination: String,
-  phoneNumber: String,
   email: String,
-  buddyPreference: [String],
+  socialBehavior: String,
+  disability: [String],
+  gender: String,
+  languages: [String],
+  contact: String,
+  city: String, //change text 'what city are you moving'
+  date: Date,
+  phoneNumber: String,
+  buddyPreference: String, // to change for []
 });
 
 const Extien = mongoose.model("extiens", extiensSchema);
@@ -110,48 +117,65 @@ app.post("/fresher", async (req, res) => {
 });
 
 app.post("/webhook", async (request, response) => {
-  console.log("req recue");
-  console.log(util.inspect(request.body, false, null, true));
+  // request.body = buddy_resp;
+  // request.body = fresher_resp;
+  // console.log(util.inspect(request.body, false, null, true));
+  // console.log("============================\n");
   const body = request.body;
-  if (body.oSHgmEFS == BUDDIE_FORM_ID) {
+  if (body.form_response.form_id == BUDDIE_FORM_ID) {
     const newExtien = new Extien({
-      name: body.form_response.answers[0].text,
-      email: body.form_response.answers[1].email,
-      socialBehavior: body.form_response.answers[2].choice.label,
-      languages: body.form_response.answers[3].choices.labels,
-      contact: body.form_response.answers[4].choices.labels,
+      name: selectFromForm(body, "GN7CasiGHiix"),
+      email: selectFromForm(body, "hYD2z5I26f36"),
+      socialBehavior: selectFromForm(body, "hYD2z5I26f36"),
+      gender: selectFromForm(body, "rLMuSW4vJHfa"),
+      languages: selectFromForm(body, "6jaFeLtXTYqI"),
+      contact: selectFromForm(body, "YQOFd2QaiVWH"),
+      city: selectFromForm(body, "QDicbRiXht8f"),
+      disability: selectFromForm(body, "jKFouJyCCkOb"),
+      supportLGBT: selectFromForm(body, "X0kKaaPtTUs5"),
     });
+    console.log("\n");
+    // console.log(newExtien);
+    console.log("extien save in db");
     await newExtien.save();
-  } else if (body.oSHgmEFS == FRESHER_FORM_ID) {
+  } else if (body.form_response.form_id == FRESHER_FORM_ID) {
     const newFresher = new Fresher({
-      name: body.form_response.answers[0].text,
-      contactPreference: body.form_response.answers[1].choices.labels,
-      isDisable: body.form_response.answers[2].choice.label,
-      disabilityName: body.form_response.answers[3].text,
-      socialBehavior: body.form_response.answers[4].choice.label,
-      languages: body.form_response.answers[5].choices.labels,
-      date: body.form_response.answers[6].date,
-      destination: body.form_response.answers[7].text,
-      phoneNumber: body.form_response.answers[8].phone_number,
-      email: body.form_response.answers[9].email,
-      buddyPreference: body.form_response.answers[10].choices.labels,
+      name: selectFromForm(body, "aTGSjnNn4oEq"),
+      email: selectFromForm(body, "Smoju7WEdB9k"),
+      socialBehavior: selectFromForm(body, "NU0hDw52a7xk"),
+      disability: selectFromForm(body, "0k2fqeneFDEt"), //missing
+      gender: selectFromForm(body, "sfftV9TXNYnz"),
+      languages: selectFromForm(body, "BQBY8aeJJxDl"),
+      contact: selectFromForm(body, "ZXELRkh4NQJc"),
+      city: selectFromForm(body, "clnMcloIyKPr"),
+      date: selectFromForm(body, "cziBv6p38JjT"),
+      phoneNumber: selectFromForm(body, "fLaj9bi28HLa"),
+      buddyPreference: selectFromForm(body, "Q5qQ5smKb1Ce"),
     });
+    console.log("\n");
+    console.log(newFresher);
 
-    const firstExtien = await Extien.findOne().exec();
-
-    if (!firstExtien) {
-      return res.status(204).json({ error: "No buddy found :(" });
-    }
-    const extienBackup = firstExtien.toObject();
-
-    //matching function here
-    await Extien.findOneAndDelete({ email: firstExtien.email }).exec();
-    await Extien.create(new Extien(extienBackup));
-
-    console.log(`${newFresher.name} meat ${extienBackup.name}`);
-    sendExtienEmail(newFresher, extienBackup);
+    var allExtien = await Extien.find().exec();
+    var match = calcMatch(allExtien, newFresher);
+    sendExtienEmail(newFresher, match);
   }
 });
+
+function selectFromForm(form, field) {
+  answer = form.form_response.definition.fields.find(
+    (element) => element.id == field
+  );
+  if (answer) {
+    ansObj = form.form_response.answers.find(
+      (element) => element.field.id == field
+    );
+    // console.log(ansObj);
+    if (ansObj.type == "choice") return ansObj[ansObj.type].label;
+    if (ansObj.type == "choices") return ansObj[ansObj.type].labels;
+    return ansObj[ansObj.type];
+  }
+  return null;
+}
 
 function formatDate(date) {
   const options = { day: "numeric", month: "long", year: "numeric" };
